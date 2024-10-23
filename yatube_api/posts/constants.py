@@ -1,0 +1,1 @@
+LENGTH_TEXT = 20
