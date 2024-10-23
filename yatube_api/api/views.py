@@ -1,12 +1,11 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, validators, viewsets
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework import filters, viewsets, mixins
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, AllowAny
 
 from api.permissions import AuthorPermission
 from api.serializers import (CommentSerializer, FollowSerializer,
                              GroupSerializer, PostSerializer)
-
-from posts.models import Follow, Group, Post
+from posts.models import Group, Post
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -34,31 +33,24 @@ class CommentViewSet(viewsets.ModelViewSet):
         post = self.get_post()
         serializer.save(author=self.request.user, post=post)
 
-    def perform_update(self, serializer):
-        comment = self.get_object()
-        serializer.save(author=comment.author, post=comment.post)
-
 
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly, )
+    permission_classes = (AllowAny, )
 
 
-class FollowViewSet(viewsets.ModelViewSet):
+class FollowViewSet(
+    mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet
+):
     serializer_class = FollowSerializer
     filter_backends = (filters.SearchFilter, )
     search_fields = ('following__username', 'user__username')
 
     def get_queryset(self):
         user = self.request.user
-        return Follow.objects.filter(user=user)
+        return user.following.all()
 
     def perform_create(self, serializer):
         user = self.request.user
-        following = serializer.validated_data['following']
-        if user == following:
-            raise validators.ValidationError(
-                'Нельзя подписаться на самого себя.'
-            )
         serializer.save(user=user)

@@ -13,12 +13,12 @@ router_v1.register(
     basename='comments'
 )
 
-token_auth = [
-    path('', include('djoser.urls')),
+api_v1 = [
     path('', include('djoser.urls.jwt')),
+    path('', include(router_v1.urls))
 ]
 
 urlpatterns = [
-    path('v1/', include(token_auth)),
-    path('v1/', include(router_v1.urls))
+    path('v1/', include(api_v1)),
+
 ]

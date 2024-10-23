@@ -15,7 +15,6 @@ class Group(models.Model):
     description = models.TextField(verbose_name='описание')
 
     class Meta:
-        default_related_name = 'group'
         verbose_name = 'Группа'
         verbose_name_plural = 'Группы'
 
@@ -42,13 +41,14 @@ class Post(models.Model):
     )
     group = models.ForeignKey(
         Group,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         verbose_name='группа'
     )
 
     class Meta:
+        ordering = ('-pub_date',)
         default_related_name = 'posts'
         verbose_name = 'Пост'
         verbose_name_plural = 'Посты'
@@ -92,18 +92,23 @@ class Follow(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='user',
+        related_name='following',
         verbose_name='Пользователь'
     )
     following = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='following',
+        related_name='user',
         verbose_name='подписки'
     )
 
     class Meta:
-        unique_together = ('name', 'owner')
+        constraints = (
+            models.UniqueConstraint(
+                fields=['user', 'following'],
+                name='unique_user_following'
+            ),
+        )
         verbose_name = 'Подписка'
         verbose_name_plural = 'Подписки'
 
